@@ -1,5 +1,7 @@
 import strawberry
 import datetime
+from resolver.query.user import Query
+from resolver.mutations.user import Mutation
 
 
 @strawberry.federation.type(keys=["id"], description="User register information.")
