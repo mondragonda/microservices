@@ -1,5 +1,5 @@
 import strawberry
-from database import PyObjectId
+from .database import PyObjectId
 
 # serialize PyObjectId as a scalar type
 PyObjectIdType = strawberry.scalar(

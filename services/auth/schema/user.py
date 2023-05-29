@@ -10,7 +10,7 @@ from ...strawberryconf import PyObjectIdType
 @strawberry.experimental.pydantic.type(model=UserModel)
 @strawberry.federation.type(keys=["_id"], description="User register information.")
 class User:
-    id: PyObjectIdType
+    id: PyObjectIdType  # type: ignore
     email: strawberry.auto
     # password: strawberry.Private[strawberry.auto]
     photo_url: strawberry.auto
