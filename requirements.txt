@@ -2,3 +2,4 @@ strawberry-graphql
 fastapi
 uvicorn
 motor
+python-dotenv

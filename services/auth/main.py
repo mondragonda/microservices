@@ -1,13 +1,11 @@
+from .schema.user import schema
+from strawberry.fastapi import GraphQLRouter
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, Request, Response
 from http import HTTPStatus
 from os import environ
 from typing import Awaitable, Callable
 
-from fastapi import FastAPI, Request, Response
-from fastapi.middleware.cors import CORSMiddleware
-
-from strawberry.fastapi import GraphQLRouter
-
-from schema.user import schema
 
 app = FastAPI()
 

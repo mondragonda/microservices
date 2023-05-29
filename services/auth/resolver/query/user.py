@@ -1,8 +1,8 @@
-import strawberry
-from strawberry.dataloader import DataLoader
-from schema.user import User
 from typing import List
-from auth.database.database import db
+from strawberry.dataloader import DataLoader
+import strawberry
+from ...schema.user import User
+from ...database.database import db
 
 
 async def load_users(keys: List[int]) -> List[User]:

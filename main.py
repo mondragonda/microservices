@@ -1,13 +1,13 @@
 from http import HTTPStatus
 from os import environ
 from typing import Awaitable, Callable
-
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from strawberry.fastapi import GraphQLRouter
 
 from services.schema import schema
+
 
 app = FastAPI()
 
