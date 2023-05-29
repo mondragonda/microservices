@@ -11,9 +11,9 @@ deploy-railway:
     - add-apt-repository ppa:deadsnakes/ppa &&
     - apt-get update &&
     - apt-get install -y curl python3.11 &&
-    - python3 -m pip3 install --upgrade pip3 && 
-    - pip3 install -r requirements.txt &&
-    - pushd ./services && export $PYTHONPATH="${$PYTHONPATH}:$(pwd)"
+    - python -m pip install --upgrade pip && 
+    - pip install -r requirements.txt &&
+    - pushd ./services && export PYTHONPATH="${PYTHONPATH}:$(pwd)"
     - curl -fsSL https://railway.app/install.sh | sh &&
     - railway up --service=$RAILWAY_SERVICE_NAME -d &&
     - railway run uvicorn services.auth.main:app --port 443
