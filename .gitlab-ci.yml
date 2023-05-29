@@ -1,13 +1,19 @@
-# You can override the included template(s) by including variable overrides
-# SAST customization: https://docs.gitlab.com/ee/user/application_security/sast/#customizing-the-sast-settings
-# Secret Detection customization: https://docs.gitlab.com/ee/user/application_security/secret_detection/#customizing-settings
-# Dependency Scanning customization: https://docs.gitlab.com/ee/user/application_security/dependency_scanning/#customizing-the-dependency-scanning-settings
-# Container Scanning customization: https://docs.gitlab.com/ee/user/application_security/container_scanning/#customizing-the-container-scanning-settings
-# Note that environment variables can be set in several places
-# See https://docs.gitlab.com/ee/ci/variables/#cicd-variable-precedence
-# stages:
-# - test
-# sast:
-#   stage: test
-# include:
-# - template: Security/SAST.gitlab-ci.yml
+stages:
+  - deploy
+
+deploy-railway:
+  stage: deploy
+  image: ubuntu
+  only:
+    - pushes
+    - main
+  script:
+    - add-apt-repository ppa:deadsnakes/ppa &&
+    - apt-get update &&
+    - apt-get install -y curl python3.11 &&
+    - python3 -m pip3 install --upgrade pip3 && 
+    - pip3 install -r requirements.txt &&
+    - pushd ./services && export $PYTHONPATH="${$PYTHONPATH}:$(pwd)"
+    - curl -fsSL https://railway.app/install.sh | sh &&
+    - railway up --service=$RAILWAY_SERVICE_NAME -d &&
+    - railway run uvicorn services.auth.main:app --port 443
