@@ -1,25 +1,4 @@
-# Strawberry GraphQL Subgraph Template
-
-This template can be used to quickly create an [Apollo Federation] subgraph with
-[Strawberry GraphQL].
-
-## Getting started
-
-To get started, install [rover] and then run the following commands:
-
-```shell
-rover template use -t subgraph-python-strawberry-fastapi
-```
-
-## What's included
-
-- A basic, [Apollo Federation] subgraph with simple examples for queries,
-  entities, and mutations.
-- Example tests in the `tests` directory.
-- GitHub Actions workflows which will:
-  - Run `pytest` on every push.
-  - Check the schema against Apollo Studio on every push.
-  - Publish the subgraph to Apollo Studio on every push to the `main` branch.
+# NWM Microservices 
 
 ## Next Steps
 
@@ -33,10 +12,17 @@ pip install -r requirements.txt -r requirements-dev.txt
 
 ### Running the server
 
-To run the server, run:
+From `services` directory. 
+Initialize `PYTHONPATH` environment variable with the path of `services` package:
 
 ```bash
-uvicorn main:app --reload
+export PYTHONPATH="${PYTHONPATH}:$(pwd)"
+```
+
+From project root run:
+
+```bash
+uvicorn services.auth.main:app --reload
 ```
 
 ### Apollo Studio Configuration
