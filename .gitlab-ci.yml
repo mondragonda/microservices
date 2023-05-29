@@ -14,6 +14,7 @@ deploy-railway:
     - python -m pip install --upgrade pip && 
     - pip install -r requirements.txt &&
     - pushd ./services && export PYTHONPATH="${PYTHONPATH}:$(pwd)"
+    - popd
     - curl -fsSL https://railway.app/install.sh | sh &&
     - export RAILWAY_TOKEN=64bd483f-daa9-43d2-b6c3-658631955345 &&
     - echo $RAILWAY_TOKEN
