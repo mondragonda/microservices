@@ -25,6 +25,8 @@ From project root run:
 uvicorn services.auth.main:app --reload
 ```
 
+Service GraphQL explorer will be running on: http://localhost:8000
+
 ### Apollo Studio Configuration
 
 The GitHub actions for this template are configured to publish the subgraph to Apollo Studio. But they are disabled by default. To enable them, you'll need to add the following secrets to your repository:
