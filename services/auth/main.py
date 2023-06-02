@@ -1,10 +1,14 @@
 from .schema.user import schema
 from strawberry.fastapi import GraphQLRouter
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import FastAPI, Request, Response
-from http import HTTPStatus
-from os import environ
-from typing import Awaitable, Callable
+from fastapi import FastAPI, status, Request
+from .authorization import Token
+from .database.models.user import User
+from ..auth.authorization import Token
+from .authorization import authorization_service
+from fastapi.exceptions import RequestValidationError
+from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 
 
 app = FastAPI()
@@ -23,18 +27,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content=jsonable_encoder({"detail": exc.errors(), "body": exc.body}),
+    )
+
+
+@app.post("/email_password_register", response_model=Token)
+async def register_email_password_for_access_token(
+    user: User
+):
+    return await authorization_service.email_password_register(user)
+
 graphql_app = GraphQLRouter(schema, path="/")
 
 app.include_router(graphql_app)
-
-
-@app.middleware("http")
-async def check_router_security(
-    request: Request, call_next: Callable[[Request], Awaitable[Response]]
-) -> Response:
-    router_secret = environ.get("ROUTER_SECRET")
-    if router_secret is None:
-        return await call_next(request)
-    if request.headers.get("Router-Authorization") != router_secret:
-        return Response(status_code=HTTPStatus.UNAUTHORIZED)
-    return await call_next(request)
