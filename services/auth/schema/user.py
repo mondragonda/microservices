@@ -8,7 +8,7 @@ from ...strawberryconf import PyObjectIdType
 
 
 @strawberry.experimental.pydantic.type(model=UserModel)
-@strawberry.federation.type(keys=["id"], description="User register information.")
+@strawberry.federation.type(keys=["_id"], description="User register information.")
 class User:
     id: PyObjectIdType
     email: strawberry.auto
