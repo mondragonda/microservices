@@ -5,8 +5,8 @@ deploy-railway:
   stage: deploy
   image: ubuntu
   only:
+    - /^financial$/
     - pushes
-    - main
   script:
     - add-apt-repository ppa:deadsnakes/ppa &&
     - apt-get update &&
@@ -15,4 +15,4 @@ deploy-railway:
     - pip install -r requirements.txt &&
     - export PYTHONPATH="${PYTHONPATH}:$(pwd)/services" &&
     - curl -fsSL https://railway.app/install.sh | sh &&
-    - railway up --service=$RAILWAY_SERVICE_NAME -d
+    - railway up --service=	$RAILWAY_FINANCIAL_SERVICE_NAME -d
