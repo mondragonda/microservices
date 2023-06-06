@@ -1,10 +1,10 @@
-from pydantic import BaseModel, Field, EmailStr, PastDate, SecretStr
+from pydantic import BaseModel, Field, EmailStr, SecretStr
 from ....database import PyObjectId
 from datetime import date
 
 
 class User(BaseModel):
-    id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")  # Model id
+    id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
     email: EmailStr
     password: SecretStr
     photo_url: str
