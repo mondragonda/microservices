@@ -10,17 +10,10 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 
-
 app = FastAPI()
-
-# origins = [
-#     "https://studio.apollographql.com",
-# ]
 
 app.add_middleware(
     CORSMiddleware,
-    # allow_origins=origins,
-    # allow_origins=origins,
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
