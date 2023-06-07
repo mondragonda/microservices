@@ -1,5 +1,4 @@
 import strawberry
-from ..resolver.mutations.user import Mutation
 from typing import List
 import strawberry
 from ..database.database import db
@@ -7,8 +6,11 @@ from ..database.models.user import User as UserModel
 from ...strawberryconf import PyObjectIdType
 
 
-@strawberry.experimental.pydantic.type(model=UserModel)
-@strawberry.federation.type(keys=["_id"], description="User register information.")
+@strawberry.experimental.pydantic.type(
+    model=UserModel,
+    description="User register information.",
+    all_fields=False
+)
 class User:
     id: PyObjectIdType
     email: strawberry.auto
