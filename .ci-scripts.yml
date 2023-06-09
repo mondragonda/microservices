@@ -12,7 +12,7 @@
   script:
     - railway up --service=$RAILWAY_AUTH_SERVICE_NAME -d
 
-.financial-service-deployment: &financial-service-deployment
+.financial-service-deployment:
   script:
     - railway up --service=$RAILWAY_FINANCIAL_SERVICE_NAME -d
 
