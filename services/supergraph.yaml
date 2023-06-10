@@ -1,0 +1,10 @@
+federation_version: 2
+subgraphs:
+  auth:
+    routing_url: http://localhost:8000
+    schema:
+      subgraph_url: http://localhost:8000
+  financial:
+    routing_url: http://localhost:8500
+    schema:
+      subgraph_url: http://localhost:8500

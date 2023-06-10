@@ -1,0 +1,23 @@
+.python311-setup:
+  script:
+    - add-apt-repository ppa:deadsnakes/ppa &&
+    - apt-get update &&
+    - apt-get install -y curl python3.11 &&
+    - curl -fsSL https://bootstrap.pypa.io/get-pip.py | python3.11 &&
+    - pip install -r requirements.txt &&
+    - export PYTHONPATH="${PYTHONPATH}:$(pwd)/services" &&
+    - curl -fsSL https://railway.app/install.sh | sh &&
+
+.auth-service-deployment:
+  script:
+    - railway up --service=$RAILWAY_AUTH_SERVICE_NAME -d
+
+.financial-service-deployment:
+  script:
+    - railway up --service=$RAILWAY_FINANCIAL_SERVICE_NAME -d
+
+.services-deployment:
+  script:
+    - !reference [.python311-setup, script]
+    - !reference [.auth-service-deployment, script]
+    - !reference [.financial-service-deployment, script]
