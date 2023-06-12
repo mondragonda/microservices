@@ -21,7 +21,7 @@ export PYTHONPATH="${PYTHONPATH}:$(pwd)"
 
 Set the MongoDB environment variables
 ```bash
-source ./.env.example
+source .env.example
 ```
 
 From project root run:
