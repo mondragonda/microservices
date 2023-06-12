@@ -1,5 +1,5 @@
 import strawberry
-from typing import List
+from typing import List, Dict, Any
 
 from services.database import PyObjectId
 from ...auth.schema.user import User
@@ -9,9 +9,11 @@ from ..database.database import db
 from ..database.models.advisor import Advisor as AdvisorModel
 from ...strawberryconf import PyObjectIdType
 from ..database.database import db
-
+from ...pagination import PaginationWindow, get_pagination_window
 
 # WORKAROUND TO FIX LATER
+
+
 async def get_user(root: "Advisor") -> "User":
     return User.from_pydantic(UserModel.parse_obj(
         await auth_db.users.find_one({"_id": root.user_id})  # type: ignore
@@ -41,9 +43,15 @@ async def load_financial_advisors() -> List[Advisor]:
 
 @strawberry.type
 class Query:
-    @strawberry.field
-    async def advisors(self) -> List[Advisor]:
-        return await load_financial_advisors()
+    @strawberry.field(description="Get a list of advisors.")
+    async def advisors(self, limit: int = 100, offset: int = 0) -> PaginationWindow[Advisor]:
+        return await get_pagination_window(
+            ItemType=Advisor,  # type: ignore
+            ModelType=AdvisorModel,
+            collection=db.advisors,
+            limit=limit,
+            offset=offset
+        )
 
 
 @strawberry.type
