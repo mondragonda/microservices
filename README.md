@@ -19,6 +19,11 @@ Initialize `PYTHONPATH` environment variable with the path of `services` package
 export PYTHONPATH="${PYTHONPATH}:$(pwd)"
 ```
 
+Set the MongoDB environment variables
+```bash
+source ./.env.example
+```
+
 From project root run:
 
 ```bash
