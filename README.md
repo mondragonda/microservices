@@ -59,11 +59,11 @@ Typically, you do not want to allow the public to query your subgraph. To config
 
 This guide provides step-by-step instructions to configure and install Datadog in Ubuntu.
 
-## Prerequisites
+**Prerequisites**
 
 - Ubuntu environment
 
-## Steps
+**Steps**
 
 1. **Create a Datadog account**
 
@@ -129,6 +129,6 @@ This guide provides step-by-step instructions to configure and install Datadog i
 
 Once you have successfully configured and installed Datadog in Ubuntu, the agent will now begin collecting system metrics, logs, and other relevant data from your Ubuntu environment.
 
-## Additional Resources
+**Additional Resources**
 
 - [Datadog Documentation](https://docs.datadoghq.com/)
