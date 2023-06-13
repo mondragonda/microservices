@@ -43,6 +43,16 @@ type AdvisorAlreadyExistsError
   user: String!
 }
 
+type AdvisorPaginationWindow
+  @join__type(graph: FINANCIAL)
+{
+  """The list of items in this pagination window."""
+  items: [Advisor!]!
+
+  """Total number of items in the filtered dataset."""
+  totalItemsCount: Int!
+}
+
 """Date (isoformat)"""
 scalar Date
   @join__type(graph: AUTH)
@@ -84,7 +94,9 @@ type Query
   @join__type(graph: FINANCIAL)
 {
   users: [User!]! @join__field(graph: AUTH)
-  advisors: [Advisor!]! @join__field(graph: FINANCIAL)
+
+  """Get a list of advisors."""
+  advisors(limit: Int! = 100, offset: Int! = 0): AdvisorPaginationWindow! @join__field(graph: FINANCIAL)
 }
 
 """User register information."""
