@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, EmailStr, SecretStr
+from pydantic import BaseModel, Field, EmailStr, SecretStr, PrivateAttr
 from ....database import PyObjectId
 from datetime import date
 
@@ -13,3 +13,4 @@ class User(BaseModel):
     # date_of_birth: PastDate
     date_of_birth: date
     address: str
+    _verified: bool = PrivateAttr()
