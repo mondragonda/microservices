@@ -9,6 +9,7 @@ from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 from ..database import PyObjectId
 from fastapi.encoders import jsonable_encoder
+from secrets import token_urlsafe
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -28,6 +29,9 @@ class Authorization:
 
     def get_password_hash(self, password: str):
         return pwd_context.hash(password)
+
+    def get_url_safe_verification_token(self):
+        return token_urlsafe(64)
 
     def create_access_token(self, data: dict, expires_delta: timedelta | None = None):
         to_encode = data.copy()
@@ -89,8 +93,11 @@ class Authorization:
                         "first_name": valid_user.first_name,
                         "last_name": valid_user.last_name,
                         "date_of_birth": valid_user.date_of_birth.isoformat(),
-                        "address": valid_user.address
+                        "address": valid_user.address,
+                        "_verified": False
                     }, session=session)
+                user_account_verification_token = self.get_url_safe_verification_token()
+                # Persist token on redis indexed by user _id
                 async with session.start_transaction():
                     if created_user_result:
                         token = await self.login_for_access_token(valid_user)

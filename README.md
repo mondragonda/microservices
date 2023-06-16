@@ -132,3 +132,65 @@ Once you have successfully configured and installed Datadog in Ubuntu, the agent
 **Additional Resources**
 
 - [Datadog Documentation](https://docs.datadoghq.com/)
+
+### Redis Installation and Configuration
+
+This guide provides step-by-step instructions to install and configure Redis in Ubuntu.
+
+**Steps**
+
+1. **Install Redis**
+
+   - Run the following command to install Redis:
+
+     ```
+     sudo apt update
+     sudo apt install redis-server
+     ```
+
+   - The Redis server will be installed on your system.
+
+2. **Configure Redis**
+
+   - Open the Redis configuration file by running the command:
+
+     ```
+     sudo nano /etc/redis/redis.conf
+     ```
+
+   - Find the section that starts with '# IF YOU ARE SURE YOU WANT YOUR INSTANCE TO LISTEN TO ALL THE INTERFACES. # JUST COMMENT OUT THE FOLLOWING LINE.'
+
+   - Comment out the line that starts with bind 127.0.0.1 ::1 by adding a # symbol at the beginning of the line
+     
+     ```
+     # bind 127.0.0.1 ::1
+     ```
+
+   - Save the changes and exit the editor.
+
+3. **Start Redis**
+
+   - Start the Redis service by running the command:
+
+     ```
+     sudo systemctl start redis-server
+     ```
+
+   - Redis is now running on your system.
+
+4. **Verify Redis installation**
+
+   - To check if Redis is running properly, run the following command:
+
+     ```
+     redis-cli ping
+     ```
+
+   - If Redis is running, it will respond with `PONG`.
+
+Once you have successfully installed and configured Redis in Ubuntu, you can use it in your Python code to store and retrieve data.
+
+**Additional Resources**
+
+- [Redis Documentation](https://redis.io/documentation)
+- [Redis Python Library (redis-py)](https://github.com/andymccurdy/redis-py)
