@@ -33,6 +33,8 @@ async def authentication_middleware(request: Request, call_next):
         )
     auth_token = auth_header.strip().split(" ")
     try:
+        if len(auth_token) != 2:
+            raise invalid_credentials_exception
         token_payload = jwt.decode(auth_token[1], getenv(
             "SECRET_KEY", default=""), algorithms=[getenv("ALGORITHM", default="")])
         username = token_payload["sub"]
