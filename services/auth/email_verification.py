@@ -16,6 +16,10 @@ class EmailVerificationService:
         response = requests.post(os.getenv("MAILGUN_API_URL", default=""), auth=(
             "api", os.getenv("MAILGUN_API_KEY", default="")), data=message)
 
+        if not response.ok:
+            raise BaseException("Failed to send verification email.",
+                                "Response: ", response.status_code, response.content)
+
         return response.ok
 
     def verify_account(self, email, token):

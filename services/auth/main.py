@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, status, Request
 from .authorization import Token
 from .database.models.user import User
-from ..auth.authorization import Token
+from ..auth.authorization import Token, LoginEmailPassword
 from .authorization import authorization_service
 from fastapi.exceptions import RequestValidationError
 from fastapi.encoders import jsonable_encoder
@@ -34,6 +34,13 @@ async def register_email_password_for_access_token(
     user: User
 ):
     return await authorization_service.email_password_register(user)
+
+
+@app.post("/email_password_login", response_model=Token)
+async def login_email_password_for_access_token(
+    credentials: LoginEmailPassword
+):
+    return await authorization_service.login_for_access_token(credentials)
 
 graphql_app = GraphQLRouter(schema, path="/")
 
