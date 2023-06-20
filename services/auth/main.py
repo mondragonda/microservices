@@ -9,16 +9,11 @@ from .authorization import authorization_service
 from fastapi.exceptions import RequestValidationError
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
+from os import getenv
+from .middleware import authentication_middleware
+from .middleware import email_password_login, email_password_register_path
 
 app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 
 @app.exception_handler(RequestValidationError)
@@ -29,19 +24,38 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     )
 
 
-@app.post("/email_password_register", response_model=Token)
+@app.post(email_password_register_path, response_model=Token)
 async def register_email_password_for_access_token(
     user: User
 ):
     return await authorization_service.email_password_register(user)
 
 
-@app.post("/email_password_login", response_model=Token)
+@app.post(email_password_login, response_model=Token)
 async def login_email_password_for_access_token(
     credentials: LoginEmailPassword
 ):
     return await authorization_service.login_for_access_token(credentials)
 
-graphql_app = GraphQLRouter(schema, path="/")
+
+graphql_api_path = '/'
+
+
+@app.middleware('http')
+async def authenticate(request: Request, call_next):
+    return await authentication_middleware(request, call_next)
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+graphql_app = GraphQLRouter(schema, path=graphql_api_path,
+                            graphiql=bool(int(getenv("NWM_DEBUG_MODE", default="1"))))
 
 app.include_router(graphql_app)
