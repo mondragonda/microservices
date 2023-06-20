@@ -4,7 +4,13 @@ from fastapi.responses import JSONResponse
 from jose import JWTError, jwt
 from os import getenv
 
-graphql_api_path = '/'
+email_password_register_path = '/email_password_register'
+email_password_login = '/email_password_login'
+
+allowed_unauthenticated_paths = [
+    email_password_register_path,
+    email_password_login
+]
 
 
 async def authentication_middleware(request: Request, call_next):
@@ -16,7 +22,7 @@ async def authentication_middleware(request: Request, call_next):
         detail="Could not validate credentials",
         headers=authenticate_header
     )
-    if request.url.path != graphql_api_path:
+    if request.url.path in allowed_unauthenticated_paths:
         return await call_next(request)
     auth_header = request.headers.get("Authorization")
     if auth_header is None:

@@ -11,6 +11,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from os import getenv
 from .middleware import authentication_middleware
+from .middleware import email_password_login, email_password_register_path
 
 app = FastAPI()
 
@@ -23,16 +24,11 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     )
 
 
-email_password_register_path = '/email_password_register'
-
-
 @app.post(email_password_register_path, response_model=Token)
 async def register_email_password_for_access_token(
     user: User
 ):
     return await authorization_service.email_password_register(user)
-
-email_password_login = '/email_password_login'
 
 
 @app.post(email_password_login, response_model=Token)
