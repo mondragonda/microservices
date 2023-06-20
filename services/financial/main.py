@@ -1,8 +1,8 @@
-from fastapi import FastAPI
+from os import getenv
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-
 from strawberry.fastapi import GraphQLRouter
-
+from ..auth.middleware import authentication_middleware
 from services.financial.schema.advisor import schema
 
 app = FastAPI()
@@ -19,7 +19,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-graphql_app = GraphQLRouter(schema, path="/")
+graphql_api_path = '/'
+
+
+@app.middleware('http')
+async def authenticate(request: Request, call_next):
+    return await authentication_middleware(request, call_next)
+
+graphql_app = GraphQLRouter(schema, path=graphql_api_path,
+                            graphiql=bool(int(getenv("NWM_DEBUG_MODE", default="1"))))
 
 app.include_router(graphql_app)
 
