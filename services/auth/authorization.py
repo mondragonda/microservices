@@ -3,7 +3,7 @@ import redis
 from os import getenv
 from jose import jwt
 from secrets import token_urlsafe
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr, SecretStr, Extra
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from .database.models.user import User as UserModel
@@ -12,7 +12,6 @@ from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 from ..database import PyObjectId
 from fastapi.encoders import jsonable_encoder
-from typing import Any
 from .email_verification import email_verification_service
 
 
@@ -22,8 +21,13 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 class Token(BaseModel):
     _id: datetime
     user: PyObjectId = Field(default_factory=PyObjectId, exclude=True)
-    access_token: str
     token_type: str
+    access_token: str
+
+
+class LoginEmailPassword(BaseModel, extra=Extra.forbid):
+    email: EmailStr
+    password: SecretStr
 
 
 class Authorization:
@@ -68,35 +72,34 @@ class Authorization:
             return False
         return user
 
-    async def login_for_access_token(self, user: UserModel):
-        result = await self.authenticate_user(user.email, user.password.get_secret_value())
-        if not result:
+    async def login_for_access_token(self, credentials: LoginEmailPassword):
+        user = await self.authenticate_user(credentials.email, credentials.password.get_secret_value())
+        if not user:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Incorrect username or password",
                 headers={"WWW-Authenticate": "Bearer"},
             )
+        user = UserModel.parse_obj(user)
         access_token_expires = timedelta(
             minutes=int(getenv("ACCESS_TOKEN_EXPIRE_MINUTES", default="0")))
         access_token = self.create_access_token(
-            data={"sub": user.email}, expires_delta=access_token_expires
+            data={"sub": credentials.email}, expires_delta=access_token_expires
         )
-        return {
-            "_id": datetime.utcnow(),
-            "user": user.id,
-            "token_type": "bearer",
-            "access_token": access_token,
-        }
+        token = {"_id": datetime.utcnow(), "user":
+                 user.id, "token_type": "bearer", "access_token": access_token}
+        created_token_result = await db.tokens.insert_one(token)
+        if created_token_result.inserted_id:
+            return Token.parse_obj(token)
+        raise BaseException("Failed to save user authentication token on database.")
 
     def generate_account_verification(self, user, verification_token, verification_token_expiration_time):
-        def send_verification(pipe):
+        def send_verification(p):
             verification_token_cache_set = self.redis.set(name=user.id.__str__(
             ), value=verification_token, ex=verification_token_expiration_time)
             if verification_token_cache_set:
-                verification_generate_email_send_ok = email_verification_service.send_verification_email(
+                email_verification_service.send_verification_email(
                     user, verification_token)
-                if verification_generate_email_send_ok == False:
-                    raise BaseException("Failed to send verification email.")
             else:
                 raise BaseException(
                     "Failed to save account verification token on cache.")
@@ -112,10 +115,12 @@ class Authorization:
             async with await client.start_session() as session:
                 created_user_result = None
                 async with session.start_transaction():
+                    user_password = self.get_password_hash(
+                        valid_user.password.get_secret_value())
                     created_user_result = await db.users.insert_one({
                         "_id": valid_user.id,
                         "email": valid_user.email,
-                        "password": self.get_password_hash(valid_user.password.get_secret_value()),
+                        "password": user_password,
                         "photo_url": valid_user.photo_url,
                         "first_name": valid_user.first_name,
                         "last_name": valid_user.last_name,
@@ -125,16 +130,17 @@ class Authorization:
                     }, session=session)
                 if created_user_result.inserted_id:
                     async with session.start_transaction():
-                        token = await self.login_for_access_token(valid_user)
-                        created_token_result = await db.tokens.insert_one(
-                            token, session=session)
-                        if created_token_result.inserted_id:
+                        generated_access_token = await self.login_for_access_token(LoginEmailPassword(
+                            email=valid_user.email,
+                            password=valid_user.password
+                        ))
+                        if generated_access_token:
                             user_account_verification_token = self.get_url_safe_token()
                             token_expiration_time = int(os.getenv(
                                 "ACCOUNT_REGISTER_VERIFICATION_HASH_EXPIRE_SECS", default="0"))
                             self.generate_account_verification(
                                 valid_user, user_account_verification_token, token_expiration_time)
-                            return Token.parse_obj(token)
+                            return generated_access_token
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                             detail='Registration process failed due to an internal error.')
 
