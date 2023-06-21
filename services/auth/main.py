@@ -16,6 +16,20 @@ from .middleware import email_password_login, email_password_register_path
 app = FastAPI()
 
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@app.middleware('http')
+async def authenticate(request: Request, call_next):
+    return await authentication_middleware(request, call_next, 'auth')
+
+
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     return JSONResponse(
@@ -39,20 +53,6 @@ async def login_email_password_for_access_token(
 
 
 graphql_api_path = '/'
-
-
-@app.middleware('http')
-async def authenticate(request: Request, call_next):
-    return await authentication_middleware(request, call_next, 'auth')
-
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 
 graphql_app = GraphQLRouter(schema, path=graphql_api_path,
