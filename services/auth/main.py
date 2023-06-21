@@ -43,7 +43,7 @@ graphql_api_path = '/'
 
 @app.middleware('http')
 async def authenticate(request: Request, call_next):
-    return await authentication_middleware(request, call_next)
+    return await authentication_middleware(request, call_next, 'auth')
 
 
 app.add_middleware(
