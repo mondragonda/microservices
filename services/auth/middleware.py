@@ -1,7 +1,7 @@
-from fastapi import status, Request, HTTPException, Response
+from fastapi import status, Request, Response
 from .authorization import authorization_service
-from jose import JWTError, jwt
 from os import getenv
+from .authorization import authorization_service
 import json
 
 email_password_register_path = '/email_password_register'
@@ -44,15 +44,10 @@ async def authentication_middleware(request: Request, call_next, service):
     )
     if request.url.path in allowed_unauthenticated_paths:
         return await call_next(request)
-    auth_header = request.headers.get("Authorization")
-    if auth_header is None:
+    access_token_claims = authorization_service.get_access_token_claims(request)
+    if access_token_claims is None:
         return unauthorized_response
-    auth_token = auth_header.strip().split(" ")
-    if len(auth_token) != 2:
-        return unauthorized_response
-    token_payload = jwt.decode(auth_token[1], getenv(
-        "SECRET_KEY", default=""), algorithms=[getenv("ALGORITHM", default="")])
-    username = token_payload["sub"]
+    username = access_token_claims["sub"]
     if username is None:
         return unauthorized_response
     user = await authorization_service.get_user(username)

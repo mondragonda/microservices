@@ -1,5 +1,6 @@
 import os
 import redis
+import typing
 from os import getenv
 from jose import jwt
 from secrets import token_urlsafe
@@ -8,7 +9,7 @@ from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from .database.models.user import User as UserModel
 from .database.database import db, client
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, Request
 from fastapi.responses import JSONResponse
 from ..database import PyObjectId
 from fastapi.encoders import jsonable_encoder
@@ -60,6 +61,16 @@ class Authorization:
         encoded_jwt = jwt.encode(to_encode, getenv("SECRET_KEY"),  # type: ignore
                                  algorithm=getenv("ALGORITHM"))  # type: ignore
         return encoded_jwt
+
+    def get_access_token_claims(self, request: Request) -> typing.Optional[dict[str, typing.Any]]:
+        auth_header = request.headers.get("Authorization")
+        if auth_header is None:
+            return None
+        auth_token = auth_header.strip().split(" ")
+        if len(auth_token) != 2 or auth_token[0] != "Bearer":
+            return None
+        return jwt.decode(auth_token[1], getenv(
+            "SECRET_KEY", default=""), algorithms=[getenv("ALGORITHM", default="")])
 
     async def get_user(self, email):
         return await db.users.find_one({"email": str.lower(email)})

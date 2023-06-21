@@ -1,9 +1,10 @@
 import strawberry
+from strawberry.types import Info
 from typing import List
-import strawberry
 from ..database.database import db
 from ..database.models.user import User as UserModel
 from ...strawberryconf import PyObjectIdType
+from ..authorization import authorization_service
 
 
 @strawberry.experimental.pydantic.type(
@@ -21,8 +22,11 @@ class User:
     address: strawberry.auto
 
 
-async def load_users() -> List[User]:
-    users_cursor = db.users.find()
+async def load_users(info: Info) -> List[User]:
+    logged_user_claims = authorization_service.get_access_token_claims(
+        info.context["request"])
+    users_cursor = db.users.find(
+        {"email": logged_user_claims["sub"]} if logged_user_claims else {})
     users = await users_cursor.to_list(length=100)
     if users:
         return [User.from_pydantic(UserModel.parse_obj(user)) for user in users]
@@ -33,8 +37,8 @@ async def load_users() -> List[User]:
 @strawberry.type
 class Query:
     @strawberry.field
-    async def users(self) -> List[User]:
-        return await load_users()
+    async def users(self, info: Info) -> List[User]:
+        return await load_users(info)
 
 
 schema = strawberry.federation.Schema(
