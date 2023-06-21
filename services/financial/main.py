@@ -24,7 +24,7 @@ graphql_api_path = '/'
 
 @app.middleware('http')
 async def authenticate(request: Request, call_next):
-    return await authentication_middleware(request, call_next)
+    return await authentication_middleware(request, call_next, 'financial')
 
 graphql_app = GraphQLRouter(schema, path=graphql_api_path,
                             graphiql=bool(int(getenv("NWM_DEBUG_MODE", default="1"))))
