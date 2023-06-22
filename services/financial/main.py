@@ -2,7 +2,7 @@ from os import getenv
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from strawberry.fastapi import GraphQLRouter
-from ..auth.middleware import authentication_middleware
+from ..auth.middleware import authentication_middleware, graphql_api_path
 from services.financial.schema.advisor import schema
 
 app = FastAPI()
@@ -18,8 +18,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-graphql_api_path = '/'
 
 
 @app.middleware('http')

@@ -1,15 +1,24 @@
 from fastapi import status, Request, Response
 from .authorization import authorization_service
 from os import getenv
-from .authorization import authorization_service
+from .authorization import authorization_service, authenticate_header
 import json
+import typing
 
 email_password_register_path = '/email_password_register'
 email_password_login = '/email_password_login'
+user_account_verification = '/account_verification'
+user_account_verification_resend = '/account_verification_resend'
+graphql_api_path = '/'
 
 allowed_unauthenticated_paths = [
     email_password_register_path,
     email_password_login
+]
+
+allowed_unactivated_account_paths = [
+    user_account_verification,
+    user_account_verification_resend
 ]
 
 
@@ -35,12 +44,16 @@ def get_parsable_graphql_error(status_code, service):
 async def authentication_middleware(request: Request, call_next, service):
     if bool(int(getenv("NWM_DEBUG_MODE", default="1"))):
         return await call_next(request)
-    authenticate_header = {"WWW-Authenticate": "Bearer"}
     unauthorized_response = Response(
         get_parsable_graphql_error(
             status_code=status.HTTP_401_UNAUTHORIZED, service=service),
         status_code=status.HTTP_401_UNAUTHORIZED,
         headers=authenticate_header
+    )
+    forbidden_response = Response(
+        get_parsable_graphql_error(
+            status_code=status.HTTP_403_FORBIDDEN, service=service),
+        status_code=status.HTTP_403_FORBIDDEN,
     )
     if request.url.path in allowed_unauthenticated_paths:
         return await call_next(request)
@@ -50,7 +63,9 @@ async def authentication_middleware(request: Request, call_next, service):
     username = access_token_claims["sub"]
     if username is None:
         return unauthorized_response
-    user = await authorization_service.get_user(username)
+    user: typing.Any = await authorization_service.get_user(username)
     if user is None:
         return unauthorized_response
+    if user["_verified"] is False and request.url.path not in allowed_unactivated_account_paths:
+        return forbidden_response
     return await call_next(request)

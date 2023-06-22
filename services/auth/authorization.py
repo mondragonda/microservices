@@ -2,14 +2,14 @@ import os
 import redis
 import typing
 from os import getenv
-from jose import jwt
+from jose import jwt, JWTError
 from secrets import token_urlsafe
 from pydantic import BaseModel, Field, EmailStr, SecretStr, Extra
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from .database.models.user import User as UserModel
 from .database.database import db, client
-from fastapi import HTTPException, status, Request
+from fastapi import HTTPException, status, Request, Response
 from fastapi.responses import JSONResponse
 from ..database import PyObjectId
 from fastapi.encoders import jsonable_encoder
@@ -29,6 +29,9 @@ class Token(BaseModel):
 class LoginEmailPassword(BaseModel, extra=Extra.forbid):
     email: EmailStr
     password: SecretStr
+
+
+authenticate_header = {"WWW-Authenticate": "Bearer"}
 
 
 class Authorization:
@@ -69,8 +72,11 @@ class Authorization:
         auth_token = auth_header.strip().split(" ")
         if len(auth_token) != 2 or auth_token[0] != "Bearer":
             return None
-        return jwt.decode(auth_token[1], getenv(
-            "SECRET_KEY", default=""), algorithms=[getenv("ALGORITHM", default="")])
+        try:
+            return jwt.decode(auth_token[1], getenv(
+                "SECRET_KEY", default=""), algorithms=[getenv("ALGORITHM", default="")])
+        except JWTError:
+            return None
 
     async def get_user(self, email):
         return await db.users.find_one({"email": str.lower(email)})
@@ -89,7 +95,7 @@ class Authorization:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Incorrect username or password",
-                headers={"WWW-Authenticate": "Bearer"},
+                headers=authenticate_header,
             )
         user = UserModel.parse_obj(user)
         access_token_expires = timedelta(
@@ -115,6 +121,57 @@ class Authorization:
                 raise BaseException(
                     "Failed to save account verification token on cache.")
         self.redis.transaction(send_verification)
+
+    async def get_user_by_request(self, request: Request):
+        access_token_claims = self.get_access_token_claims(request)
+        if access_token_claims:
+            return await self.get_user(access_token_claims["sub"])
+
+    async def verify_account(self, request: Request):
+        if not (user := (await self.get_user_by_request(request))):
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                                headers=authenticate_header)
+        if user['_verified'] == True:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail='Invalid operation.'
+            )
+        cached_verification_token = self.redis.get(
+            str(user["_id"])) if self.redis.get(str(user["_id"])) else None
+        if not cached_verification_token or not (sent_verification_token := request.query_params.get("token")) or (cached_verification_token.decode('ascii') != sent_verification_token):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail='Invalid verification token.'
+            )
+        async with await client.start_session() as session:
+            async with session.start_transaction():
+                verification_result = await db.users.update_one({"_id": user["_id"]}, {"$set": {"_verified": True}}, session=session)
+                if verification_result.modified_count != 1 or self.redis.delete(str(user["_id"])) != 1:
+                    raise HTTPException(
+                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        detail="Failed to verify account due to internal error."
+                    )
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+    async def resend_account_verification_email(self, request: Request):
+        user = await self.get_user_by_request(request)
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to resend account verification due to internal error."
+            )
+        if user['_verified'] is True:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid operation."
+            )
+        user = UserModel.parse_obj(user)
+        user_account_verification_token = self.get_url_safe_token()
+        token_expiration_time = int(os.getenv(
+            "ACCOUNT_REGISTER_VERIFICATION_HASH_EXPIRE_SECS", default="0"))
+        self.generate_account_verification(
+            user, user_account_verification_token, token_expiration_time)
+        return Response(status_code=status.HTTP_200_OK)
 
     async def email_password_register(self, user: UserModel):
         valid_user = UserModel.validate(user)
