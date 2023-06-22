@@ -6,7 +6,7 @@ import requests
 class EmailVerificationService:
 
     def send_verification_email(self, account_user: User, generated_verification_token: str):
-        verification_link = f'<a href="https://example.com/verify?token={generated_verification_token}">https://example.com/verify?token={generated_verification_token}</a>'
+        verification_link = f'<a href="{os.getenv("NWM_FRONT_PAGE_URL")}/verify?token={generated_verification_token}">{os.getenv("NWM_FRONT_PAGE_URL")}/verify?token={generated_verification_token}</a>'
         message = {}
         message['from'] = f'NWM Financial Advising <{os.getenv("MAILGUN_EMAIL_USER")}>'
         message['to'] = f'{account_user.first_name} {account_user.last_name} <{account_user.email}>'
@@ -21,9 +21,6 @@ class EmailVerificationService:
                                 "Response: ", response.status_code, response.content)
 
         return response.ok
-
-    def verify_account(self, email, token):
-        pass
 
 
 email_verification_service = EmailVerificationService()

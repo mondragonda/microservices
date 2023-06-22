@@ -1,7 +1,7 @@
 from .schema.user import schema
 from strawberry.fastapi import GraphQLRouter
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import FastAPI, status, Request
+from fastapi import FastAPI, status, Request, Response
 from .authorization import Token
 from .database.models.user import User
 from ..auth.authorization import Token, LoginEmailPassword
@@ -11,7 +11,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from os import getenv
 from .middleware import authentication_middleware
-from .middleware import email_password_login, email_password_register_path
+from .middleware import email_password_login, email_password_register_path, user_account_verification, user_account_verification_resend, graphql_api_path
 
 app = FastAPI()
 
@@ -52,7 +52,14 @@ async def login_email_password_for_access_token(
     return await authorization_service.login_for_access_token(credentials)
 
 
-graphql_api_path = '/'
+@app.patch(user_account_verification)
+async def account_verification(request: Request):
+    return await authorization_service.verify_account(request)
+
+
+@app.post(user_account_verification_resend)
+async def account_verification_email(request: Request):
+    return await authorization_service.resend_account_verification_email(request)
 
 
 graphql_app = GraphQLRouter(schema, path=graphql_api_path,
