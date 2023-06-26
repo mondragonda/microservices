@@ -92,9 +92,9 @@ class Authorization:
     async def login_for_access_token(self, credentials: LoginEmailPassword):
         user = await self.authenticate_user(credentials.email, credentials.password.get_secret_value())
         if not user:
-            raise HTTPException(
+            return Response(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect username or password",
+                content="Incorrect username or password",
                 headers=authenticate_header,
             )
         user = UserModel.parse_obj(user)
@@ -108,7 +108,7 @@ class Authorization:
         created_token_result = await db.tokens.insert_one(token)
         if created_token_result.inserted_id:
             return Token.parse_obj(token)
-        raise BaseException("Failed to save user authentication token on database.")
+        return Response(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def generate_account_verification(self, user, verification_token, verification_token_expiration_time):
         def send_verification(p):
@@ -129,41 +129,41 @@ class Authorization:
 
     async def verify_account(self, request: Request):
         if not (user := (await self.get_user_by_request(request))):
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                                headers=authenticate_header)
+            return Response(status_code=status.HTTP_401_UNAUTHORIZED,
+                            headers=authenticate_header)
         if user['_verified'] == True:
-            raise HTTPException(
+            return Response(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail='Invalid operation.'
+                content='Invalid operation.'
             )
         cached_verification_token = self.redis.get(
             str(user["_id"])) if self.redis.get(str(user["_id"])) else None
         if not cached_verification_token or not (sent_verification_token := request.query_params.get("token")) or (cached_verification_token.decode('ascii') != sent_verification_token):
-            raise HTTPException(
+            return Response(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail='Invalid verification token.'
+                content='Invalid verification token.'
             )
         async with await client.start_session() as session:
             async with session.start_transaction():
                 verification_result = await db.users.update_one({"_id": user["_id"]}, {"$set": {"_verified": True}}, session=session)
                 if verification_result.modified_count != 1 or self.redis.delete(str(user["_id"])) != 1:
-                    raise HTTPException(
+                    return Response(
                         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                        detail="Failed to verify account due to internal error."
+                        content="Failed to verify account due to internal error."
                     )
         return Response(status_code=status.HTTP_204_NO_CONTENT)
 
     async def resend_account_verification_email(self, request: Request):
         user = await self.get_user_by_request(request)
         if user is None:
-            raise HTTPException(
+            return Response(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to resend account verification due to internal error."
+                content="Failed to resend account verification due to internal error."
             )
         if user['_verified'] is True:
-            raise HTTPException(
+            return Response(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid operation."
+                content="Invalid operation."
             )
         user = UserModel.parse_obj(user)
         user_account_verification_token = self.get_url_safe_token()
@@ -209,8 +209,8 @@ class Authorization:
                             self.generate_account_verification(
                                 valid_user, user_account_verification_token, token_expiration_time)
                             return generated_access_token
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                            detail='Registration process failed due to an internal error.')
+        return Response(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        content='Registration process failed due to an internal error.')
 
 
 authorization_service = Authorization()
