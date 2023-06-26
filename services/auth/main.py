@@ -15,15 +15,6 @@ from .middleware import email_password_login, email_password_register_path, user
 
 app = FastAPI()
 
-# https://github.com/tiangolo/fastapi/issues/1663
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=['*'],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 
 @app.middleware('http')
 async def authenticate(request: Request, call_next):
@@ -67,3 +58,19 @@ graphql_app = GraphQLRouter(schema, path=graphql_api_path,
 
 
 app.include_router(graphql_app)
+
+
+origins = [
+    "https://studio.apollographql.com",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000"
+]
+
+# https://github.com/tiangolo/fastapi/issues/1663
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
