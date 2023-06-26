@@ -1,6 +1,6 @@
 from .schema.user import schema
 from strawberry.fastapi import GraphQLRouter
-from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, status, Request, Response
 from .authorization import Token
 from .database.models.user import User
@@ -16,25 +16,9 @@ from .middleware import email_password_login, email_password_register_path, user
 app = FastAPI()
 
 # https://github.com/tiangolo/fastapi/issues/1663
-
-
-@app.middleware("http")
-async def add_cors_headers(request, call_next):
-    response = await call_next(request)
-    response.headers["Access-Control-Allow-Origin"] = "https://silly-stop-sandbox.up.railway.app/, http://localhost:3000"
-    response.headers["Access-Control-Allow-Credentials"] = "true"
-    response.headers["Access-Control-Allow-Methods"] = "*"
-    response.headers["Access-Control-Allow-Headers"] = "*"
-    return response
-
-origins = [
-    'https://silly-stop-sandbox.up.railway.app/',
-    'http://localhost:3000'
-]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=['*'],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

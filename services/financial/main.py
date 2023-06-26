@@ -30,6 +30,7 @@ graphql_app = GraphQLRouter(schema, path=graphql_api_path,
 
 app.include_router(graphql_app)
 
+
 # @app.middleware("http")
 # async def check_router_security(
 #     request: Request, call_next: Callable[[Request], Awaitable[Response]]
