@@ -1,6 +1,5 @@
 from .schema.user import schema
 from strawberry.fastapi import GraphQLRouter
-from starlette.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, status, Request, Response
 from .authorization import Token
 from .database.models.user import User
@@ -10,8 +9,10 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from os import getenv
+from fastapi.middleware.cors import CORSMiddleware
 from .middleware import authentication_middleware
 from .middleware import email_password_login, email_password_register_path, user_account_verification, user_account_verification_resend, graphql_api_path
+
 
 app = FastAPI()
 
@@ -59,18 +60,12 @@ graphql_app = GraphQLRouter(schema, path=graphql_api_path,
 
 app.include_router(graphql_app)
 
+origins = ["*"]
 
-origins = [
-    "https://studio.apollographql.com",
-    "http://localhost:3000",
-    "http://127.0.0.1:3000"
-]
-
-# https://github.com/tiangolo/fastapi/issues/1663
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["*"]
 )

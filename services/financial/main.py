@@ -1,9 +1,10 @@
 from os import getenv
 from fastapi import FastAPI, Request
-from starlette.middleware.cors import CORSMiddleware
 from strawberry.fastapi import GraphQLRouter
 from ..auth.middleware import authentication_middleware, graphql_api_path
 from services.financial.schema.advisor import schema
+from fastapi.middleware.cors import CORSMiddleware
+
 
 app = FastAPI()
 
@@ -17,29 +18,11 @@ graphql_app = GraphQLRouter(schema, path=graphql_api_path,
 
 app.include_router(graphql_app)
 
-origins = [
-    "https://studio.apollographql.com",
-    "http://localhost:3000",
-    "http://127.0.0.1:3000"
-]
-
-# https://github.com/tiangolo/fastapi/issues/1663
+origins = ["*"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["*"]
 )
-
-
-# @app.middleware("http")
-# async def check_router_security(
-#     request: Request, call_next: Callable[[Request], Awaitable[Response]]
-# ) -> Response:
-#     router_secret = environ.get("ROUTER_SECRET")
-#     if router_secret is None:
-#         return await call_next(request)
-#     if request.headers.get("Router-Authorization") != router_secret:
-#         return Response(status_code=HTTPStatus.UNAUTHORIZED)
-#     return await call_next(request)
