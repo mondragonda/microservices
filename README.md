@@ -19,9 +19,19 @@ Initialize `PYTHONPATH` environment variable with the path of `services` package
 export PYTHONPATH="${PYTHONPATH}:$(pwd)"
 ```
 
+Make a copy of .env.example
+
+
+Change the name of the copy to .env
+
+
+Edit .env with your credentials to access the mongo cluster
+
+> **Note:** putting executable commands on the .env works for virtualenv and if using other virtual environment tools, the approach needs to be different
+
 Set the MongoDB environment variables
 ```bash
-source .env.example
+source .env
 ```
 
 From project root run:

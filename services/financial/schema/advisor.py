@@ -11,20 +11,23 @@ from ...strawberryconf import PyObjectIdType
 from ..database.database import db
 from ...pagination import PaginationWindow, get_pagination_window
 
-# WORKAROUND TO FIX LATER
-
 
 async def get_user(root: "Advisor") -> "User":
     return User.from_pydantic(UserModel.parse_obj(
         await auth_db.users.find_one({"_id": root.user_id})  # type: ignore
     ))
 
+async def get_advisor(id: "Advisor.id") -> "Advisor":
+    return Advisor.from_pydantic(AdvisorModel.parse_obj(
+        await db.advisors.find_one({"_id": id})  # type: ignore
+    ))
 
 @strawberry.experimental.pydantic.type(
     model=AdvisorModel,
     description="Financial advisor information.",
     all_fields=False
 )
+
 class Advisor:
     id: PyObjectIdType
     contact_phone_number: strawberry.auto
@@ -43,6 +46,11 @@ async def load_financial_advisors() -> List[Advisor]:
 
 @strawberry.type
 class Query:
+    @strawberry.field(description="Advisor Details")
+    async def advisor_details_id(self, id: str) -> Advisor:
+        advisor_id = PyObjectIdType(id)
+        return await get_advisor(advisor_id)
+    
     @strawberry.field(description="Get a list of advisors.")
     async def advisors(self, limit: int = 100, offset: int = 0) -> PaginationWindow[Advisor]:
         return await get_pagination_window(
@@ -53,6 +61,19 @@ class Query:
             offset=offset
         )
 
+    @strawberry.field(description="Search for advisors.")
+    async def search_advisors(self, query: str) -> List[Advisor]:
+        advisors_cursor = db.advisors.find({
+                "$or": [
+                    {"contact_phone_number": {"$regex": query, "$options": "i"}},
+                ]
+            })
+        
+        advisors = await advisors_cursor.to_list(length=100)
+        if advisors:
+            return [Advisor.from_pydantic(AdvisorModel.parse_obj(advisor)) for advisor in advisors]
+        else:
+            return []
 
 @strawberry.type
 class UserForAdvisorNotExistsError:
